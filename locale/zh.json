@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Chrome Use",
+    "description": "让 DeepSeek Harness 使用你电脑上的 Google Chrome：打开网页、点击、填表、上传文件、截图。默认用一个独立的配置，也可以连接你正在用的 Chrome，带上你的登录状态。"
+  }
+}

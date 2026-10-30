@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # The plugin promises macOS and Windows. Hosted runners on both ship Google Chrome.
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Unit tests
+        run: pnpm run test
+      - name: Real Chrome through the plugin's server command
+        run: pnpm run smoke
+      - name: Install the DSH this plugin targets
+        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.5
+      - name: The whole plugin inside DSH, with a scripted model
+        run: node scripts/e2e-dsh.mjs

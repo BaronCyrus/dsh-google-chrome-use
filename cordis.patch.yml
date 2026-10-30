@@ -1,0 +1,5 @@
+# Register the chrome_use tool. The browser tools stay out of the model's tool
+# list until a task calls it, so sessions that never open a browser pay nothing.
+- insert:
+    - id: chrome-use
+      name: 'dsh-chrome-use'

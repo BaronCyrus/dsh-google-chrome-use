@@ -1,0 +1,78 @@
+{
+  "name": "dsh-chrome-use",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.32.1",
+  "description": "Let DeepSeek Harness use Google Chrome on macOS and Windows: a dedicated profile that stays logged in, or the Chrome you already use. Powered by Chrome DevTools MCP.",
+  "type": "module",
+  "main": "./src/index.js",
+  "icon": "./icon.png",
+  "exports": {
+    ".": "./src/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "icon.png",
+    "src/*.js",
+    "locale/*.json",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "compatibility.json",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "check": "pnpm run test && pnpm run smoke && pnpm pack --pack-destination .artifacts"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "chrome",
+    "chrome-use",
+    "browser-use",
+    "browser-automation",
+    "mcp",
+    "chrome-devtools-mcp"
+  ],
+  "author": "BaronCyrus",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-mcp-client": ">=0.1.5-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-tools": ">=0.1.5-rc.1 <0.3.0-0",
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
+  "dependencies": {
+    "chrome-devtools-mcp": "1.12.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-agent": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-attachment": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-mcp-client": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-ptc-runtime": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-session": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-subprocess": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-timeout": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3",
+    "@deepseek-ai/schemastery": "3.18.5"
+  }
+}
