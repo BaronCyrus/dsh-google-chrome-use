@@ -67,7 +67,18 @@ dsh plugin --profile web add dsh-google-chrome-use@0.2.0
 
 更新用的是 DSH 自带的 pnpm，遵守它的发布冷却策略：默认会直接装上这个版本，并把它记进 profile 的 `minimumReleaseAgeExclude`；如果你配了更严格的策略，页面会提示什么时候可以更新。安装源（尤其是国内镜像）还没同步新版本时，页面会提示过几分钟再试。
 
-从本地路径（`link:`）安装切回官方源时，先在**插件**页卸载，再按上面的步骤安装。`cordis.patch.yml` 里的配置行不受影响。本地路径安装不会出现更新按钮。
+本地路径（`link:`）安装不会出现更新按钮。要切回官方源，按这个顺序做：
+
+1. 在**插件**页卸载。
+2. 删掉卸载后留在 profile 里的符号链接，路径末尾不要带 `/`。Windows 上用 `rmdir`，不要加 `/s`。
+
+   ```bash
+   rm ~/.dsh/profiles/desktop/node_modules/dsh-google-chrome-use
+   ```
+
+3. 按上面的步骤安装，然后完全退出并重新打开 DSH。
+
+不删这个链接的话，重装时 pnpm 会把本地仓库的 `node_modules` 整个搬进插件目录，仓库的依赖就没了，插件也启用失败。`cordis.patch.yml` 里的配置行不受影响。
 
 ## 配置
 

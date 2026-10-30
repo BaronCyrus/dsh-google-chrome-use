@@ -33,6 +33,8 @@ node scripts/e2e-dsh.mjs
 
 Do not claim Windows support from a macOS run. The Windows evidence is the `Test (windows-latest)` and `windows-headed` jobs in `.github/workflows/ci.yml`. The second one uploads what was on the runner's screen. Neither covers a person using the desktop app.
 
+Moving a profile from a `link:` install to npm needs one step between removing and installing: delete the symlink `pnpm remove` leaves in the profile's `node_modules`. With DSH's hoisted linker, the next `pnpm add` otherwise moves the link target's `node_modules` into the new package directory. To rehearse this, use a link target that has its own `node_modules`.
+
 ## Upgrading chrome-devtools-mcp
 
 Pin an exact version that is at least a few days old. Then run the validation above, because its tool names and flags change between releases. `src/session.js` names `new_page` and `navigate_page`, `src/guide.js` describes the workflow, and `src/server-args.js` passes flags that must still exist.

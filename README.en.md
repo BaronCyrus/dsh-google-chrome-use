@@ -67,7 +67,18 @@ Open **Settings → Chrome Use**. The page asks npm for the latest version each 
 
 The update uses DSH's bundled pnpm under its release cooldown policy: by default pnpm installs the version and records it in the profile's `minimumReleaseAgeExclude`. With a stricter policy, the page says when you can update. If the install source, a mirror especially, does not have the new version yet, the page asks you to try again in a few minutes.
 
-To move from a local path (`link:`) install to the official source, remove the plugin on the **Plugins** page first, then install it as above. The row in `cordis.patch.yml` stays. A local path install shows no update button.
+A local path (`link:`) install shows no update button. To move to the official source, do this in order:
+
+1. Remove the plugin on the **Plugins** page.
+2. Delete the symlink the removal leaves in the profile, with no trailing `/`. On Windows use `rmdir`, without `/s`.
+
+   ```bash
+   rm ~/.dsh/profiles/desktop/node_modules/dsh-google-chrome-use
+   ```
+
+3. Install it as above, then quit and reopen DSH.
+
+If the link stays, pnpm moves your checkout's whole `node_modules` into the plugin's directory on reinstall: the checkout loses its dependencies and the plugin fails to activate. The row in `cordis.patch.yml` stays.
 
 ## Configuration
 
