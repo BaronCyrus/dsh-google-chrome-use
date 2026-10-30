@@ -30,7 +30,7 @@
 1. 打开桌面应用的**插件**页，点击**添加插件**，在**包名或地址**中填入：
 
    ```text
-   dsh-google-chrome-use@0.1.0
+   dsh-google-chrome-use@0.2.0
    ```
 
    安装源选择**官方源**，点击**安装**。新版本刚发布的 24 小时内，DSH 的 pnpm 会因为发布冷却期暂缓安装，所以请带上版本号。
@@ -43,7 +43,7 @@
 <summary>命令行和自建 profile</summary>
 
 ```bash
-dsh plugin --profile web add dsh-google-chrome-use@0.1.0
+dsh plugin --profile web add dsh-google-chrome-use@0.2.0
 ```
 
 不要对 `desktop` profile 使用这条命令，桌面版请走插件页。DSH 0.1.5 的 headless 模式没有附件存储，模型收不到截图，其他功能正常。
@@ -60,6 +60,14 @@ dsh plugin --profile web add dsh-google-chrome-use@0.1.0
 4. 模型第一次打开某个网站时，DSH 会询问你。完全访问模式下 DSH 不询问。
 
 连接后，模型每次打开页面都会收到所有标签页的标题和网址，这些内容会发给你配置的模型服务。使用前请读 [SECURITY.md](SECURITY.md)。
+
+## 更新
+
+打开**设置 → Chrome Use**。这一页每次打开时会去 npm 查一次最新版本，有新版本时点**更新插件**，然后完全退出并重新打开 DSH。插件不会在后台自己更新。
+
+更新用的是 DSH 自带的 pnpm，遵守它的发布冷却策略：默认会直接装上这个版本，并把它记进 profile 的 `minimumReleaseAgeExclude`；如果你配了更严格的策略，页面会提示什么时候可以更新。安装源（尤其是国内镜像）还没同步新版本时，页面会提示过几分钟再试。
+
+从本地路径（`link:`）安装切回官方源时，先在**插件**页卸载，再按上面的步骤安装。`cordis.patch.yml` 里的配置行不受影响。本地路径安装不会出现更新按钮。
 
 ## 配置
 

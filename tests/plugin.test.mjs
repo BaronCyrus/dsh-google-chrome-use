@@ -13,10 +13,12 @@ function fakeContext({ approval } = {}) {
   const tools = new Map()
   const plugins = []
   const listeners = new Map()
+  const injected = []
   const ctx = {
     tools: { register: (tool) => { tools.set(tool.name, tool); return () => tools.delete(tool.name) } },
     on: (event, listener) => listeners.set(event, listener),
     get: name => (name === 'approval' ? approval : undefined),
+    inject: (services, callback) => injected.push({ services, callback }),
     plugin(plugin, config) {
       plugins.push({ plugin, config })
       const fiber = Promise.resolve()
@@ -24,7 +26,7 @@ function fakeContext({ approval } = {}) {
       return fiber
     },
   }
-  return { ctx, tools, plugins, listeners }
+  return { ctx, tools, plugins, listeners, injected }
 }
 
 test('the package loads as a DSH bundle row', async () => {
@@ -35,6 +37,35 @@ test('the package loads as a DSH bundle row', async () => {
   assert.equal(name, manifest.name)
   assert.deepEqual(inject, ['tools'])
   assert.equal(manifest.dependencies['chrome-devtools-mcp'], '1.12.0')
+})
+
+test('the settings page ships with the package, and only a web profile answers it', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.dsh.client.platform, 'web')
+  assert.equal(manifest.exports['./client'], './src/client.js')
+  assert.ok(manifest.files.includes('src/*.js'))
+
+  const { ctx, injected } = fakeContext()
+  apply(ctx, Config({}))
+  assert.equal(injected.length, 1)
+  assert.deepEqual(injected[0].services, ['connection', 'webServer'])
+
+  const registered = []
+  const scope = {
+    connection: { register: (...args) => registered.push(args) },
+    effect: run => run(),
+  }
+  injected[0].callback(scope)
+  assert.equal(registered[0][0], scope)
+  assert.equal(registered[0][1], '/chrome-use')
+  assert.equal((await registered[0][2]('toString', {})).ok, false)
+
+  const handled = []
+  injected[0].callback({
+    connection: { rpc: { handle: (...args) => handled.push(args) } },
+    effect: run => run(),
+  })
+  assert.equal(handled[0][0], '/chrome-use')
 })
 
 test('the default settings are the safe ones', () => {

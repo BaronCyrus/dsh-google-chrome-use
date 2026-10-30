@@ -13,10 +13,14 @@ import { fileURLToPath } from 'node:url'
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import Schema from '@deepseek-ai/schemastery'
-import { currentHost, dedicatedProfileDir, findChrome, openRemoteDebuggingPage, probeMyChrome } from './platform.js'
+import { currentHost, dedicatedProfileDir, dshHomeDir, findChrome, openRemoteDebuggingPage, probeMyChrome } from './platform.js'
+import { createPluginManager, createVersionChannel } from './plugin-version.js'
 import { ChromeSession } from './session.js'
 
 export const name = 'dsh-google-chrome-use'
+
+/** The channel behind the page under Settings. `src/client.js` names it too. */
+const CHANNEL = '/chrome-use'
 
 export const inject = ['tools']
 
@@ -107,6 +111,17 @@ export function apply(ctx, config) {
   ctx.on('tools/execute', async (exec, next) => {
     session.noteSiteApproved(exec.name, exec.arguments)
     return next()
+  })
+
+  // Only a profile with a web server has a settings page to answer. Registering
+  // under this scope lets a first install mount the channel without rebuilding
+  // the connection, whose own context need not inject webServer.
+  const channel = createVersionChannel(createPluginManager({ dshHome: dshHomeDir(host) }))
+  ctx.inject(['connection', 'webServer'], (scope) => {
+    const service = scope.connection
+    scope.effect(() => typeof service.register === 'function'
+      ? service.register(scope, CHANNEL, channel)
+      : service.rpc.handle(CHANNEL, channel), 'chrome-use: settings channel')
   })
 }
 

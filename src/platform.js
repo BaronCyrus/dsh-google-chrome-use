@@ -76,10 +76,12 @@ export function chromeUserDataDir(host) {
 }
 
 /** @returns the default home of the dedicated profile, under the DSH data directory. */
+export function dshHomeDir(host) {
+  return host.env.DSH_HOME?.trim() || pathFor(host).join(host.home, '.dsh')
+}
+
 export function dedicatedProfileDir(host) {
-  const path = pathFor(host)
-  const dshHome = host.env.DSH_HOME?.trim() || path.join(host.home, '.dsh')
-  return path.join(dshHome, 'chrome-use', 'chrome-profile')
+  return pathFor(host).join(dshHomeDir(host), 'chrome-use', 'chrome-profile')
 }
 
 function canConnect(port) {

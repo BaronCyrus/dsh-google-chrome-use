@@ -1,6 +1,6 @@
 {
   "name": "dsh-google-chrome-use",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packageManager": "pnpm@10.32.1",
   "description": "Let DeepSeek Harness use Google Chrome on macOS and Windows: a dedicated profile that stays logged in, or the Chrome you already use. Powered by Chrome DevTools MCP.",
   "type": "module",
@@ -8,6 +8,7 @@
   "icon": "./icon.png",
   "exports": {
     ".": "./src/index.js",
+    "./client": "./src/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json"
@@ -29,6 +30,14 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
     }
   },
   "scripts": {
@@ -64,9 +73,13 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-client-connection": ">=0.1.5-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-client-locale": ">=0.1.5-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-settings": ">=0.1.5-rc.1 <0.3.0-0",
     "@deepseek-ai/dsh-mcp-client": ">=0.1.5-rc.1 <0.3.0-0",
     "@deepseek-ai/dsh-tools": ">=0.1.5-rc.1 <0.3.0-0",
-    "@deepseek-ai/schemastery": "^3.18.2"
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "react": "^18.2.0"
   },
   "dependencies": {
     "chrome-devtools-mcp": "1.12.0"
@@ -84,6 +97,8 @@
     "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.3",
     "@deepseek-ai/dsh-timeout": "0.2.1-rc.3",
     "@deepseek-ai/dsh-tools": "0.2.1-rc.3",
-    "@deepseek-ai/schemastery": "3.18.5"
+    "@deepseek-ai/schemastery": "3.18.5",
+    "react": "18.3.1",
+    "react-test-renderer": "18.3.1"
   }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Settings → Chrome Use shows the running version. Opening the page asks npm for the latest one, and a newer version installs in one click with the pnpm DSH uses. The page then asks for a restart. Nothing installs in the background.
+- An update pnpm cannot do yet says why: the release cooldown, an install source that has not synced, or one out of reach.
+- The Windows job on GitHub Actions now also runs Chrome with a real window, the plugin's default, and uploads what was on the screen.
+- The end-to-end check that Chrome closes with DSH now works: on macOS it could never fail, and on Windows it did not exist.
+
 ## 0.1.0
 
 First version.
