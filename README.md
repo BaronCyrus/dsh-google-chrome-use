@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-让 DSH 的模型使用你电脑上的 Google Chrome：打开网页、读内容、点击、填表、选下拉、上传文件、处理弹窗、截图。支持 macOS 和 Windows。
+让 DSH 的模型使用你电脑上的 Google Chrome：打开网页、读内容、点击、填表、选下拉、上传文件、处理弹窗、截图。支持 macOS 和 Windows。Windows 目前只跑过 CI 上的自动化测试，还没有在实机的桌面版上试过，遇到问题欢迎反馈。
 
 底层是 Chrome 官方的 [chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp)。这个插件负责把它接进 DSH：按需加载、连接哪个 Chrome、不同系统上的路径、隐私默认值和按网站询问。
 

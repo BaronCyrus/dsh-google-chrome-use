@@ -2,7 +2,7 @@
 
 [中文](README.md)
 
-Lets DSH models use Google Chrome on your computer: open pages, read them, click, fill forms, pick dropdown options, upload files, handle dialogs and take screenshots. Works on macOS and Windows.
+Lets DSH models use Google Chrome on your computer: open pages, read them, click, fill forms, pick dropdown options, upload files, handle dialogs and take screenshots. Works on macOS and Windows. So far Windows has only run the automated tests in CI, not the desktop app on a real machine, so please report anything you find.
 
 The browser work is done by Chrome's official [chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp). This plugin connects it to DSH: it loads on demand, chooses which Chrome to reach, handles each system's paths, sets privacy defaults and asks before opening a new site.
 
