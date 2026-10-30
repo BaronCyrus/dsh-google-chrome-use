@@ -8,7 +8,7 @@
 
 import { spawn } from 'node:child_process'
 import { accessSync, constants } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { open, readFile } from 'node:fs/promises'
 import { connect } from 'node:net'
 import { homedir } from 'node:os'
 import { posix, win32 } from 'node:path'
@@ -18,6 +18,9 @@ export const REMOTE_DEBUGGING_PAGE = 'chrome://inspect/#remote-debugging'
 
 /** The file Chrome writes into its user data directory once debugging is allowed. */
 const PORT_FILE = 'DevToolsActivePort'
+
+/** A file every Chrome profile folder has, whether or not debugging is allowed. */
+const ALWAYS_PRESENT_FILE = 'Local State'
 
 const PORT_CONNECT_TIMEOUT_MS = 1500
 
@@ -92,20 +95,40 @@ function canConnect(port) {
   })
 }
 
+function isRefused(error) {
+  return error.code === 'EPERM' || error.code === 'EACCES'
+}
+
+/**
+ * macOS refuses files that exist but reports the port file as merely missing
+ * until debugging is on. Checking a file that is always there lets the user
+ * fix the permission first, instead of finding out after ticking the checkbox.
+ */
+async function macosKeepsUsOut(dir) {
+  try {
+    await (await open(posix.join(dir, ALWAYS_PRESENT_FILE), 'r')).close()
+    return false
+  } catch (error) {
+    return isRefused(error)
+  }
+}
+
 /**
  * Check whether the running Chrome accepts debugging connections, without
  * opening one: Chrome asks the user to allow each connection, and that request
  * belongs to the first real browser action.
  * @returns `ready`; `not_enabled` when Chrome is closed or debugging is off;
- * or `denied` when the operating system keeps this process out of Chrome's folder.
+ * or `denied` when macOS keeps this process out of Chrome's folder.
  */
 export async function probeMyChrome(host) {
-  const file = pathFor(host).join(chromeUserDataDir(host), PORT_FILE)
+  const dir = chromeUserDataDir(host)
+  const file = pathFor(host).join(dir, PORT_FILE)
   let text
   try {
     text = await readFile(file, 'utf8')
   } catch (error) {
-    return { state: error.code === 'EPERM' || error.code === 'EACCES' ? 'denied' : 'not_enabled', file }
+    const mac = host.platform === 'darwin'
+    return { state: mac && (isRefused(error) || await macosKeepsUsOut(dir)) ? 'denied' : 'not_enabled', file }
   }
   // A crash can leave the file behind, so the port itself has the last word.
   const port = Number(text.split('\n')[0])

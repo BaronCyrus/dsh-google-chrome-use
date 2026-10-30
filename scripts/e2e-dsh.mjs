@@ -203,7 +203,7 @@ async function scenario(target, command) {
     model: e2e-model
 # Nobody can answer an approval in a headless run, so it would refuse every new site.
 - id: chrome-use
-  name: dsh-chrome-use
+  name: dsh-google-chrome-use
   config:
     headless: true
     askBeforeNewSite: false
@@ -222,7 +222,7 @@ async function scenario(target, command) {
 
     const dump = await run(command, ['--profile', 'headless', '--patch', patchFile, '--dump-config'], env, home)
     assert.equal(dump.code, 0, dump.stderr)
-    assert.match(dump.stdout, /# == dsh-chrome-use/)
+    assert.match(dump.stdout, /# == dsh-google-chrome-use/)
     console.log('plugin: installed, and its bundle layer is in the profile')
 
     if (target === 'my_chrome') {

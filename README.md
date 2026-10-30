@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 是什么 | 单独的 Chrome 配置，在这里登录过的账号下次还在 | 你正在用的那个 Chrome，带着全部登录状态和标签页 |
 | 适合 | 查资料、测网页、只交给模型特定账号 | 需要用你已登录的账号时 |
-| 准备工作 | 不用准备 | Chrome 144 或更新版本，勾选一次，每次连接时点一次允许 |
+| 准备工作 | 不用准备 | Chrome 144 或更新版本，勾选一次，macOS 还要开一次文件夹权限，连接时点允许 |
 
 需要哪种直接说就行，模型会自己选：
 
@@ -25,30 +25,41 @@
 
 ## 安装
 
-先[安装 Google Chrome](https://www.google.com/chrome/)。
+先准备好 [Google Chrome](https://www.google.com/chrome/) 和 DeepSeek Harness 桌面版（0.2.1 及以上的 0.2.x 版本）。
 
-这个插件还没有发布到 npm。npm 上同名的 `dsh-chrome-use` 是另一个项目，不要用这个名字安装。
+1. 打开桌面应用的**插件**页，点击**添加插件**，在**包名或地址**中填入：
 
-在插件目录运行 `pnpm pack` 得到安装包，再从本地安装：
+   ```text
+   dsh-google-chrome-use@0.1.0
+   ```
+
+   安装源选择**官方源**，点击**安装**。新版本刚发布的 24 小时内，DSH 的 pnpm 会因为发布冷却期暂缓安装，所以请带上版本号。
+
+2. **完全退出并重新打开** DSH 桌面应用。只刷新页面不会加载 Host 端的新插件。
+
+3. 在对话里说「用 Chrome 打开 example.com，告诉我页面标题」试试。
+
+<details>
+<summary>命令行和自建 profile</summary>
 
 ```bash
-dsh plugin --profile web add /绝对路径/dsh-chrome-use-0.1.0.tgz
+dsh plugin --profile web add dsh-google-chrome-use@0.1.0
 ```
 
-重启 DSH 后生效。本地开发时，先在插件目录运行 `pnpm install`，再用 `link:/插件目录的绝对路径` 安装。
+不要对 `desktop` profile 使用这条命令，桌面版请走插件页。DSH 0.1.5 的 headless 模式没有附件存储，模型收不到截图，其他功能正常。
+
+</details>
 
 ## 连接你正在用的 Chrome
 
-第一次让模型用你的 Chrome 时：
+第一次让模型用你的 Chrome 时，按它的提示做这几步：
 
-1. 插件会在 Chrome 里打开 `chrome://inspect/#remote-debugging`。
-2. 勾选 **Allow remote debugging for this browser instance**，然后告诉模型继续。
+1. **只有 macOS 需要：** 到「系统设置 → 隐私与安全性 → 文件与文件夹」，在 DeepSeek Harness 下面打开 Google Chrome（用命令行版时是你的终端程序）。不开的话插件读不到 Chrome 的文件夹，macOS 也不会主动弹窗询问。
+2. 插件会在 Chrome 里打开 `chrome://inspect/#remote-debugging`。勾选 **Allow remote debugging for this browser instance**，然后告诉模型继续。
 3. 模型开始操作时，Chrome 会弹窗询问是否允许连接，点 **Allow**。
 4. 模型第一次打开某个网站时，DSH 会询问你。完全访问模式下 DSH 不询问。
 
-**macOS：** 如果模型说系统不让读取 Chrome 的文件夹，到「系统设置 → 隐私与安全性 → 文件和文件夹」里，允许 DeepSeek Harness 访问 Google Chrome。
-
-连接你的 Chrome 后，模型能看到这个 Chrome 配置里的所有标签页。使用前请读 [SECURITY.md](SECURITY.md)。
+连接后，模型每次打开页面都会收到所有标签页的标题和网址，这些内容会发给你配置的模型服务。使用前请读 [SECURITY.md](SECURITY.md)。
 
 ## 配置
 
@@ -56,7 +67,7 @@ dsh plugin --profile web add /绝对路径/dsh-chrome-use-0.1.0.tgz
 
 ```yaml
 - id: chrome-use
-  name: dsh-chrome-use
+  name: dsh-google-chrome-use
   config:
     userDataDir: /Volumes/外置盘/chrome-profile
 ```

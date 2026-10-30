@@ -20,7 +20,7 @@ const SAFETY = `## Rules
 const MY_CHROME = `## This is the user's own Chrome, with their accounts and open tabs
 - The first browser action makes Chrome ask the user to allow the connection. Tell the user to click Allow in Chrome. If the call times out, ask them to allow it and try again.
 - The first time you open a site, DSH may ask the user to approve it. If they reject it, do not try to reach that site another way, such as a link or a script.
-- Work in tabs you opened with new_page. Do not read, change or close the user's other tabs unless they asked you to.
+- Work in tabs you opened with new_page. Do not read, change or close the user's other tabs unless they asked you to. Page tools list every open tab: do not repeat or act on the other tabs' titles and URLs.
 - file: URLs are blocked here.`
 
 const DEDICATED = `## This is a separate Chrome profile

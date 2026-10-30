@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -106,6 +106,49 @@ test('a garbled port file does not count as ready', async () => {
   try {
     assert.equal((await probeMyChrome(host)).state, 'not_enabled')
   } finally {
+    await cleanup()
+  }
+})
+
+const POSIX = process.platform !== 'win32'
+
+test('macOS keeping us out of Chrome\'s folder is reported before debugging is on', { skip: !POSIX }, async () => {
+  const { host, cleanup } = await hostWithPortFile()
+  const dir = chromeUserDataDir(host)
+  try {
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'Local State'), '{}')
+    await chmod(join(dir, 'Local State'), 0o000)
+    assert.equal((await probeMyChrome(host)).state, 'denied')
+  } finally {
+    await chmod(join(dir, 'Local State'), 0o600)
+    await cleanup()
+  }
+})
+
+test('a readable Chrome folder without a port file only means debugging is off', { skip: !POSIX }, async () => {
+  const { host, cleanup } = await hostWithPortFile()
+  const dir = chromeUserDataDir(host)
+  try {
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'Local State'), '{}')
+    assert.equal((await probeMyChrome(host)).state, 'not_enabled')
+  } finally {
+    await cleanup()
+  }
+})
+
+test('a refused file on another system is not explained as the macOS permission', { skip: !POSIX }, async () => {
+  const { host, cleanup } = await hostWithPortFile('9222\n/devtools/browser/x\n')
+  const elsewhere = { ...host, platform: 'linux', env: { XDG_CONFIG_HOME: join(host.home, 'cfg') } }
+  const dir = chromeUserDataDir(elsewhere)
+  try {
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'DevToolsActivePort'), '9222\n')
+    await chmod(join(dir, 'DevToolsActivePort'), 0o000)
+    assert.equal((await probeMyChrome(elsewhere)).state, 'not_enabled')
+  } finally {
+    await chmod(join(dir, 'DevToolsActivePort'), 0o600)
     await cleanup()
   }
 })

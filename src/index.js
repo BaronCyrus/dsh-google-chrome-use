@@ -1,5 +1,5 @@
 /**
- * dsh-chrome-use: Google Chrome for DeepSeek Harness, through Chrome DevTools MCP.
+ * dsh-google-chrome-use: Google Chrome for DeepSeek Harness, through Chrome DevTools MCP.
  *
  * The plugin registers one tool, chrome_use. Calling it starts the MCP server
  * and publishes the browser tools through DSH's own MCP client, so screenshots
@@ -16,7 +16,7 @@ import Schema from '@deepseek-ai/schemastery'
 import { currentHost, dedicatedProfileDir, findChrome, openRemoteDebuggingPage, probeMyChrome } from './platform.js'
 import { ChromeSession } from './session.js'
 
-export const name = 'dsh-chrome-use'
+export const name = 'dsh-google-chrome-use'
 
 export const inject = ['tools']
 

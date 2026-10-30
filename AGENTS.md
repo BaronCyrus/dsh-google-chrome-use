@@ -1,6 +1,6 @@
 # Repository agent guide
 
-This file governs the entire `dsh-chrome-use` repository.
+This file governs the entire `dsh-google-chrome-use` repository.
 
 ## Project boundaries
 

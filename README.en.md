@@ -12,7 +12,7 @@ The browser work is done by Chrome's official [chrome-devtools-mcp](https://gith
 | --- | --- | --- |
 | What it is | A separate Chrome profile that keeps its own logins | The Chrome you already use, with all your logins and tabs |
 | Good for | Research, testing pages, accounts you choose to hand over | Tasks that need accounts you are already logged in to |
-| Setup | None | Chrome 144 or later, one checkbox, and Allow on each connection |
+| Setup | None | Chrome 144 or later, one checkbox, a folder permission on macOS, and Allow when connecting |
 
 Just say which one you want, and the model picks it:
 
@@ -25,30 +25,41 @@ No Chrome extension is needed, and there is nothing else to install.
 
 ## Install
 
-First [install Google Chrome](https://www.google.com/chrome/).
+You need [Google Chrome](https://www.google.com/chrome/) and the DeepSeek Harness desktop app (0.2.1 or a later 0.2.x).
 
-This plugin is not on npm yet. The package called `dsh-chrome-use` on npm is a different project, so do not install by that name.
+1. Open **Plugins** in the desktop app, click **Add plugin**, and enter this under package name or address:
 
-Run `pnpm pack` in the plugin directory to get a package, then install it from disk:
+   ```text
+   dsh-google-chrome-use@0.1.0
+   ```
+
+   Choose the official source and click **Install**. For 24 hours after a release, DSH's pnpm holds back new versions, so keep the version number.
+
+2. **Quit and reopen** the desktop app. Reloading the page does not load a new host plugin.
+
+3. Try it in a conversation: "Open example.com in Chrome and tell me the page title."
+
+<details>
+<summary>Command line and custom profiles</summary>
 
 ```bash
-dsh plugin --profile web add /absolute/path/dsh-chrome-use-0.1.0.tgz
+dsh plugin --profile web add dsh-google-chrome-use@0.1.0
 ```
 
-Restart DSH afterwards. For local development, run `pnpm install` in the plugin directory and install with `link:/absolute/path/to/the/plugin` instead.
+Do not use this command on the `desktop` profile; use the Plugins page there. DSH 0.1.5's headless profile has no attachment store, so the model receives no screenshots there. Everything else works.
+
+</details>
 
 ## Connecting the Chrome you use
 
-The first time the model uses your Chrome:
+The first time the model uses your Chrome, follow its prompts:
 
-1. The plugin opens `chrome://inspect/#remote-debugging` in Chrome.
-2. Tick **Allow remote debugging for this browser instance**, then tell the model to continue.
+1. **macOS only:** in System Settings → Privacy & Security → Files & Folders, turn on Google Chrome under DeepSeek Harness (under your terminal app if you use the command line). Without this the plugin cannot read Chrome's folder, and macOS does not ask on its own.
+2. The plugin opens `chrome://inspect/#remote-debugging` in Chrome. Tick **Allow remote debugging for this browser instance**, then tell the model to continue.
 3. When the model starts, Chrome asks whether to allow the connection. Click **Allow**.
 4. The first time the model opens a site, DSH asks you. DSH does not ask in full access mode.
 
-**macOS:** if the model reports that the system is blocking Chrome's folder, allow DeepSeek Harness to access Google Chrome in System Settings → Privacy & Security → Files & Folders.
-
-Once connected, the model can see every tab in that Chrome profile. Read [SECURITY.md](SECURITY.md) (in Chinese) first.
+Once connected, the model receives the titles and URLs of all your tabs each time it opens a page, and these go to the model service you configured. Read [SECURITY.md](SECURITY.md) (in Chinese) first.
 
 ## Configuration
 
@@ -56,7 +67,7 @@ The Plugins page has no settings form yet. Add a row to your profile's `cordis.p
 
 ```yaml
 - id: chrome-use
-  name: dsh-chrome-use
+  name: dsh-google-chrome-use
   config:
     userDataDir: /Volumes/External/chrome-profile
 ```

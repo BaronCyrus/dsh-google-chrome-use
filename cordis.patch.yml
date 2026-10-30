@@ -2,4 +2,4 @@
 # list until a task calls it, so sessions that never open a browser pay nothing.
 - insert:
     - id: chrome-use
-      name: 'dsh-chrome-use'
+      name: 'dsh-google-chrome-use'

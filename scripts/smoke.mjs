@@ -98,7 +98,7 @@ try {
   const init = await server.request('initialize', {
     protocolVersion: '2025-06-18',
     capabilities: {},
-    clientInfo: { name: 'dsh-chrome-use-smoke', version: '0' },
+    clientInfo: { name: 'dsh-google-chrome-use-smoke', version: '0' },
   })
   server.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`)
   console.log(`server: ${init.serverInfo.name} ${init.serverInfo.version}`)

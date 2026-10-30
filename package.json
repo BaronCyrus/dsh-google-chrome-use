@@ -1,5 +1,5 @@
 {
-  "name": "dsh-chrome-use",
+  "name": "dsh-google-chrome-use",
   "version": "0.1.0",
   "packageManager": "pnpm@10.32.1",
   "description": "Let DeepSeek Harness use Google Chrome on macOS and Windows: a dedicated profile that stays logged in, or the Chrome you already use. Powered by Chrome DevTools MCP.",
@@ -48,6 +48,17 @@
   ],
   "author": "BaronCyrus",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BaronCyrus/dsh-google-chrome-use.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BaronCyrus/dsh-google-chrome-use/issues"
+  },
+  "homepage": "https://github.com/BaronCyrus/dsh-google-chrome-use#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
   },

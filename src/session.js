@@ -173,7 +173,7 @@ export class ChromeSession {
     }
     if (probe.state === 'ready') return
     if (probe.state === 'denied') {
-      return needsUser('grant_file_access', target, 'macOS is keeping DeepSeek Harness out of Chrome\'s data folder. Ask the user to allow it in System Settings > Privacy & Security > Files & Folders (DeepSeek Harness: Google Chrome), and then call chrome_use again.')
+      return needsUser('grant_file_access', target, 'macOS is keeping DSH out of Chrome\'s data folder, and it does not ask on its own. Ask the user to open System Settings > Privacy & Security > Files & Folders and turn on Google Chrome under DeepSeek Harness (under their terminal app if they run DSH from one), then call chrome_use again.')
     }
     return needsUser('enable_remote_debugging', target, `Chrome is not accepting connections yet. ${REMOTE_DEBUGGING_PAGE} has been opened in Chrome. Ask the user to tick "Allow remote debugging for this browser instance" there (Chrome 144 or later) and tell you when it is done, then call chrome_use with target=my_chrome again. Do not switch to the dedicated browser instead when the task needs their accounts.`)
   }
