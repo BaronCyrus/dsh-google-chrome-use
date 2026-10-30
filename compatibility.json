@@ -9,6 +9,6 @@
   "validation": {
     "0.1.5-rc.2": "scripts/e2e-dsh.mjs on macOS with the Homebrew CLI. Everything works, but this version's headless profile has no attachment store, so the model does not receive screenshots there.",
     "0.2.1-rc.3": "The desktop app's runtime. In the desktop app on macOS with a real model: the dedicated Chrome, and the user's own Chrome 156 through the macOS folder permission and Chrome's remote debugging setting. In a scratch web profile: site approval. scripts/e2e-dsh.mjs on macOS with its bundled CLI.",
-    "0.2.1-rc.5": "scripts/e2e-dsh.mjs on macOS and Windows, on GitHub Actions, on Windows with and without a Chrome window. In a scratch web profile on macOS: the settings page, and a real update through the desktop app's binary and pnpm."
+    "0.2.1-rc.5": "scripts/e2e-dsh.mjs on macOS and Windows on GitHub Actions, and on Windows both with and without a Chrome window. In a scratch web profile on macOS: the settings page, and a real update through the desktop app's binary and pnpm."
   }
 }

@@ -18,7 +18,8 @@ jobs:
         # The plugin promises macOS and Windows. Hosted runners on both ship Google Chrome.
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
+    # Installing DSH globally has taken up to 20 minutes on Windows.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -43,7 +44,8 @@ jobs:
     # The plugin opens a window by default. Runners have a desktop, so the window
     # really opens, and the artifact shows what was on the screen.
     runs-on: windows-latest
-    timeout-minutes: 25
+    # Installing DSH globally has taken up to 20 minutes on Windows.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
