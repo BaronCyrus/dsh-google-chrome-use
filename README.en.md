@@ -113,6 +113,7 @@ node scripts/e2e-dsh.mjs
 
 - `pnpm run check`: unit tests, plus a smoke test with real headless Chrome.
 - `scripts/e2e-dsh.mjs`: the full flow inside a real DSH with a scripted model. It needs no account.
+- Add `--headed` to `scripts/smoke.mjs` or `scripts/e2e-dsh.mjs` to use Chrome with a window, the plugin's default.
 
 ## Credits
 

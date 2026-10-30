@@ -113,6 +113,7 @@ node scripts/e2e-dsh.mjs
 
 - `pnpm run check`：单元测试，加上用真实无头 Chrome 跑的冒烟测试。
 - `scripts/e2e-dsh.mjs`：在真实的 DSH 里跑完整流程，用脚本扮演模型，不需要账号。
+- 给 `scripts/smoke.mjs` 或 `scripts/e2e-dsh.mjs` 加 `--headed`，就会用带窗口的 Chrome，也就是插件默认的模式。
 
 ## 致谢
 

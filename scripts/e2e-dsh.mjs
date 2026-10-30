@@ -4,6 +4,7 @@
  * MCP server and Chrome are all real. Everything lives in a throwaway DSH_HOME.
  *
  *   node scripts/e2e-dsh.mjs
+ *   node scripts/e2e-dsh.mjs --headed
  *   DSH_E2E_COMMAND='["/path/to/dsh"]' node scripts/e2e-dsh.mjs
  *
  * It checks that the browser tools stay hidden until chrome_use is called, that
@@ -11,19 +12,23 @@
  * and a screenshot read back through them. my_chrome runs against a separate
  * Chrome started under a fake home directory, so it never touches the Chrome of
  * whoever runs this; that one debugs through a port, so Chrome's Allow dialog
- * is the part it cannot cover.
+ * is the part it cannot cover. Chrome has no window unless --headed asks for
+ * one, which leaves the plugin on its default.
  */
 
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, lstatSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 
 import { chromeUserDataDir, currentHost, findChrome } from '../src/platform.js'
+
+const { values: { headed } } = parseArgs({ options: { headed: { type: 'boolean', default: false } } })
 
 const PLUGIN_DIR = fileURLToPath(new URL('..', import.meta.url))
 const RUN_TIMEOUT_MS = 240_000
@@ -68,6 +73,7 @@ function nextStep(target, url, results) {
     case 5: return { tool: 'mcp__chrome__click', args: { pageId: page(), uid: uid(/uid=(\S+) button "提交"/) } }
     case 6: return { tool: 'mcp__chrome__evaluate_script', args: { pageId: page(), function: '() => document.getElementById("out").textContent' } }
     case 7: return { tool: 'mcp__chrome__take_screenshot', args: { pageId: page() } }
+    case 8: return { tool: 'mcp__chrome__evaluate_script', args: { pageId: page(), function: '() => navigator.userAgent' } }
     default: return { text: `${MARKER}: ${/提交成功:\S+?"/.exec(results.join('\n'))?.[0] ?? 'no result'}` }
   }
 }
@@ -76,8 +82,17 @@ function chunk(delta, finishReason = null) {
   return `data: ${JSON.stringify({ id: 'e2e', object: 'chat.completion.chunk', created: 1, model: 'e2e-model', choices: [{ index: 0, delta, finish_reason: finishReason }] })}\n\n`
 }
 
+/**
+ * Whether a Chrome is running on this profile: it holds this file until it exits.
+ * On macOS the file is a symlink to nowhere, which existsSync cannot see.
+ */
+function chromeHoldsProfile(profileDir) {
+  const lock = join(profileDir, process.platform === 'win32' ? 'lockfile' : 'SingletonLock')
+  return lstatSync(lock, { throwIfNoEntry: false }) !== undefined
+}
+
 /** The fake model. It records every request made with the tool list of an agent turn. */
-function fakeModel(target, pageUrl) {
+function fakeModel(target, pageUrl, profileDir) {
   const turns = []
   const server = createServer((request, response) => {
     if (request.method !== 'POST' || !request.url.endsWith('/chat/completions')) {
@@ -105,7 +120,7 @@ function fakeModel(target, pageUrl) {
       } catch (error) {
         step = { text: `${MARKER}: script failed: ${error.message}` }
       }
-      turns.push({ tools, results, sawImage, step })
+      turns.push({ tools, results, sawImage, step, chromeRunning: chromeHoldsProfile(profileDir) })
       if (step.text) {
         response.end(`${chunk({ role: 'assistant', content: step.text })}${chunk({}, 'stop')}data: [DONE]\n\n`)
         return
@@ -150,7 +165,7 @@ function startExistingChrome(fakeHome, pageUrl) {
   const host = { platform: process.platform, env: fakeUserEnv(fakeHome), home: fakeHome }
   const userDataDir = chromeUserDataDir(host)
   const chrome = spawn(findChrome(currentHost()), [
-    '--headless=new', '--no-first-run', '--no-default-browser-check',
+    ...(headed ? [] : ['--headless=new']), '--no-first-run', '--no-default-browser-check', '--use-mock-keychain',
     '--remote-debugging-port=0', `--user-data-dir=${userDataDir}`, pageUrl,
   ], { stdio: 'ignore' })
   return { chrome, portFile: join(userDataDir, 'DevToolsActivePort') }
@@ -168,12 +183,14 @@ async function scenario(target, command) {
     response.end(PAGE)
   })
   const pageUrl = `http://127.0.0.1:${await listen(site)}/`
-  const { server: model, turns } = fakeModel(target, pageUrl)
+  const dshHome = join(home, 'dsh')
+  const dedicatedProfile = join(dshHome, 'chrome-use', 'chrome-profile')
+  const { server: model, turns } = fakeModel(target, pageUrl, dedicatedProfile)
   const modelPort = await listen(model)
 
   const env = {
     ...process.env,
-    DSH_HOME: join(home, 'dsh'),
+    DSH_HOME: dshHome,
     E2E_FAKE_MODEL_KEY: 'not-a-real-key',
     NO_PROXY: '127.0.0.1,localhost',
     no_proxy: '127.0.0.1,localhost',
@@ -204,8 +221,8 @@ async function scenario(target, command) {
 # Nobody can answer an approval in a headless run, so it would refuse every new site.
 - id: chrome-use
   name: dsh-google-chrome-use
-  config:
-    headless: true
+  config:${headed ? '' : `
+    headless: true`}
     askBeforeNewSite: false
 `)
 
@@ -234,7 +251,7 @@ async function scenario(target, command) {
     if (process.env.DSH_E2E_VERBOSE) console.log(`--- stdout\n${task.stdout}\n--- stderr\n${task.stderr}`)
     assert.equal(task.code, 0, `the task failed\n--- stdout\n${task.stdout}\n--- stderr\n${task.stderr}`)
 
-    assert.ok(turns.length >= 9, `the agent stopped after ${turns.length} steps\n${task.stdout}\n${task.stderr}`)
+    assert.ok(turns.length >= 10, `the agent stopped after ${turns.length} steps\n${task.stdout}\n${task.stderr}`)
     const first = turns[0]
     assert.ok(first.tools.includes('chrome_use'), 'chrome_use should be offered from the start')
     assert.ok(!first.tools.some(tool => tool.startsWith('mcp__chrome__')), 'browser tools should stay hidden until chrome_use runs')
@@ -255,13 +272,17 @@ async function scenario(target, command) {
     assert.match(task.stdout, new RegExp(`${MARKER}: 提交成功:张三`))
     console.log('form: filled and submitted through DSH')
 
+    const userAgent = last.results.at(-1)
+    assert.equal(userAgent.includes('HeadlessChrome'), !headed, `headed is ${headed}, and the user agent says: ${userAgent}`)
+    console.log(`mode: ${headed ? 'with a window' : 'no window'}`)
+
     if (target === 'my_chrome') {
       assert.equal(existing.chrome.exitCode, null, 'disconnecting must leave the user\'s Chrome running')
       assert.match(turns[2].results[1], new RegExp(pageUrl.replace(/[/.]/g, '\\$&')), 'the existing tab should be visible')
       console.log('cleanup: the existing Chrome kept running after DSH exited, with its own tab visible')
-    } else if (process.platform !== 'win32') {
-      const lock = join(env.DSH_HOME, 'chrome-use', 'chrome-profile', 'SingletonLock')
-      assert.ok(await waitUntil(() => !existsSync(lock), 20_000), 'Chrome should close when DSH exits')
+    } else {
+      assert.ok(last.chromeRunning, 'Chrome should hold its profile while the agent works')
+      assert.ok(await waitUntil(() => !chromeHoldsProfile(dedicatedProfile), 20_000), 'Chrome should close when DSH exits')
       console.log('cleanup: Chrome closed when DSH exited')
     }
     console.log(`${target} PASSED`)

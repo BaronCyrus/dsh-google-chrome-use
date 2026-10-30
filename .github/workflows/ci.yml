@@ -37,3 +37,31 @@ jobs:
         run: npm install --global @deepseek-ai/dsh@0.2.1-rc.5
       - name: The whole plugin inside DSH, with a scripted model
         run: node scripts/e2e-dsh.mjs
+
+  windows-headed:
+    name: Chrome with a window (windows-latest)
+    # The plugin opens a window by default. Runners have a desktop, so the window
+    # really opens, and the artifact shows what was on the screen.
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Windowed Chrome through the plugin's server command
+        run: node scripts/smoke.mjs --headed --out smoke-output
+      - name: Install the DSH this plugin targets
+        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.5
+      - name: The plugin on its default windowed mode inside DSH
+        run: node scripts/e2e-dsh.mjs --headed
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-headed
+          path: smoke-output

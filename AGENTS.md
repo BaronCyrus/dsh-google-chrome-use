@@ -26,11 +26,11 @@ pnpm run check
 node scripts/e2e-dsh.mjs
 ```
 
-`pnpm run check` runs the unit tests and `scripts/smoke.mjs`, then packs a tarball into `.artifacts/`. Both scripts run Chrome headless in throwaway profiles and use no credentials.
+`pnpm run check` runs the unit tests and `scripts/smoke.mjs`, then packs a tarball into `.artifacts/`. Both scripts run Chrome headless in throwaway profiles and use no credentials. With `--headed` they open a real window instead, which is the plugin's default.
 
 `scripts/e2e-dsh.mjs` runs the plugin inside a real DSH against a scripted model. Set `DSH_E2E_COMMAND` to a JSON array to choose the DSH, for example the CLI bundled in the desktop app. It cannot cover Chrome's Allow dialog or DSH's approval prompt. After changing the connection or approval flow, test those by hand in the Web UI with `target=my_chrome`.
 
-Do not claim Windows support from a macOS run. The Windows evidence is the `windows-latest` job in `.github/workflows/ci.yml`.
+Do not claim Windows support from a macOS run. The Windows evidence is the `Test (windows-latest)` and `windows-headed` jobs in `.github/workflows/ci.yml`. The second one uploads what was on the runner's screen. Neither covers a person using the desktop app.
 
 ## Upgrading chrome-devtools-mcp
 

@@ -1,22 +1,32 @@
 /**
  * Drive real Chrome through the same server command the plugin starts, in a
- * throwaway profile with no window. Runs the same on macOS and Windows:
+ * throwaway profile. Runs the same on macOS and Windows:
  *
  *   node scripts/smoke.mjs
+ *   node scripts/smoke.mjs --headed --out smoke-output
+ *
+ * It runs with no window unless --headed asks for one, which is the plugin's
+ * default. --out keeps the screenshots. A page screenshot works with no window
+ * at all, so on Windows a headed run also asks the desktop what it is showing.
  *
  * It needs Google Chrome and no DSH, model or credentials.
  */
 
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
-import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { spawn, spawnSync } from 'node:child_process'
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 
 import { currentHost, findChrome } from '../src/platform.js'
 import { SERVER_ENV, buildServerArgs } from '../src/server-args.js'
+
+const { values: { headed, out: outDir } } = parseArgs({
+  options: { headed: { type: 'boolean', default: false }, out: { type: 'string' } },
+})
 
 const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>冒烟测试</title></head><body>
 <form onsubmit="event.preventDefault();document.getElementById('out').textContent='提交:'+document.getElementById('name').value+'/'+document.getElementById('city').value+'/'+document.getElementById('agree').checked">
@@ -29,6 +39,29 @@ const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>
 <button onclick="document.getElementById('asked').textContent=confirm('确定吗')?'确定':'取消'">弹窗</button><p id="asked"></p></body></html>`
 
 const STEP_TIMEOUT_MS = 90_000
+
+// Base64 so the console's code page cannot garble a page title.
+const CHROME_WINDOW_TITLES = `
+$titles = Get-Process chrome -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | ForEach-Object { $_.MainWindowTitle }
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($titles -join ' | ')))`
+
+const SAVE_DESKTOP = `
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+$bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$image = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+[System.Drawing.Graphics]::FromImage($image).CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+$image.Save($env:SMOKE_DESKTOP_FILE, [System.Drawing.Imaging.ImageFormat]::Png)`
+
+function powershell(script, env) {
+  const encoded = Buffer.from(`$ErrorActionPreference = 'Stop'\n${script}`, 'utf16le').toString('base64')
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], {
+    encoding: 'utf8',
+    env: { ...process.env, ...env },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  assert.equal(result.status, 0, `powershell failed: ${result.error ?? result.stderr}`)
+  return result.stdout.trim()
+}
 
 class McpServer {
   constructor(command, args, env) {
@@ -85,7 +118,7 @@ await new Promise(resolve => site.once('listening', resolve))
 const url = `http://127.0.0.1:${site.address().port}/`
 
 const profile = await mkdtemp(join(tmpdir(), 'chrome-use-smoke-'))
-const config = { toolset: 'standard', headless: true, executablePath: '', fileRoots: [], extraArgs: [] }
+const config = { toolset: 'standard', headless: !headed, executablePath: '', fileRoots: [], extraArgs: [] }
 const args = buildServerArgs({
   cliPath: fileURLToPath(import.meta.resolve('chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js')),
   target: 'dedicated',
@@ -131,6 +164,10 @@ try {
 
   const script = source => server.call('evaluate_script', { pageId, function: `() => ${source}` })
 
+  const userAgent = (await script('navigator.userAgent')).text
+  assert.equal(userAgent.includes('HeadlessChrome'), !headed, `headed is ${headed}, and the user agent says: ${userAgent}`)
+  console.log(`mode: ${headed ? 'with a window' : 'no window'}`)
+
   const upload = join(tmpdir(), `chrome-use-smoke-${process.pid}.txt`)
   await writeFile(upload, 'hello')
   await server.call('upload_file', { pageId, uid: uid(/uid=(\S+) (?:button|textbox) "附件/), filePaths: [upload] })
@@ -163,6 +200,17 @@ try {
   assert.ok((await stat(saved)).size > 0)
   await rm(saved)
   console.log(`screenshot: saved under the path the guide names (${tmpdir()})`)
+
+  if (outDir) {
+    await mkdir(outDir, { recursive: true })
+    await writeFile(join(outDir, 'page.jpeg'), Buffer.from(shot.images[0].data, 'base64'))
+  }
+  if (headed && process.platform === 'win32') {
+    const titles = Buffer.from(powershell(CHROME_WINDOW_TITLES), 'base64').toString('utf8')
+    assert.match(titles, /冒烟测试/, `no Chrome window on the desktop shows the page. Windows: ${titles}`)
+    console.log(`desktop: Chrome's window is open, titled ${titles}`)
+    if (outDir) powershell(SAVE_DESKTOP, { SMOKE_DESKTOP_FILE: resolve(outDir, 'desktop.png') })
+  }
 
   server.child.stdin.end()
   const code = await Promise.race([server.exited, new Promise(resolve => setTimeout(() => resolve('still running'), 20_000))])
