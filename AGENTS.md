@@ -41,4 +41,24 @@ Pin an exact version that is at least a few days old. Then run the validation ab
 
 ## Release authorization
 
-`npm publish`, Git tags, GitHub releases and any Chrome Web Store submission are externally visible. Do them only when the user explicitly asks and confirms the version.
+`npm publish`, Git tags, GitHub releases and any Chrome Web Store submission are externally visible. Do them only when the user explicitly asks and confirms the version. Never reuse, move or delete a published version or its tag. If one needs a correction, publish a new patch version.
+
+## Releasing
+
+Pushing a `v*` tag releases. `.github/workflows/publish.yml` checks the tag and its notes, runs every job in `ci.yml`, publishes to npm's `latest` with GitHub OIDC, then creates the GitHub Release from `docs/releases/v<version>.md` with the tarball it published. Do not run `npm publish` locally: a local publish has no provenance. The workflow packs without installing dependencies, so the package must keep having no build and no lifecycle scripts. Never add a setup-node `registry-url` or `NODE_AUTH_TOKEN` to it: npm treats either as token auth and skips OIDC.
+
+A manual run (`gh workflow run publish.yml`) does everything else a tag does and asks npm whether it would accept the workflow. Its `trusted-publisher` job fails while no trusted publisher exists.
+
+1. Update together: the `package.json` version, `CHANGELOG.md`, the version pinned in both READMEs, and `docs/releases/v<version>.md`. The notes are in Chinese. The first line is `# v<version>：<短标题>`, which becomes the release title. Then a one-sentence summary, bullets with bold labels, a `验证：…` paragraph that says what was and was not tested, and how to update.
+2. Run the validation above, commit, push `main`, and wait for CI.
+3. **Until npm has a trusted publisher for this package:** ask the user to add one in the package's settings on npmjs.com: repository `BaronCyrus/dsh-google-chrome-use`, workflow filename `publish.yml`, environment empty. Only the user can, with 2FA, so never ask for a token, password or one-time code. A new one expires unless a publish succeeds within 2 days, so ask only when the version is ready to tag. Then do a manual run and read its `trusted-publisher` job.
+4. Tag and push:
+
+   ```sh
+   git tag -a v<version> -m "dsh-google-chrome-use v<version>"
+   git push origin v<version>
+   ```
+
+5. Confirm the run succeeded, `npm view dsh-google-chrome-use dist-tags --prefer-online` shows the version as `latest`, `npm view dsh-google-chrome-use@<version> dist.attestations` is not empty, and `gh release view v<version>` shows the notes and the tarball. For the first release this way, suggest the user turn on "Require two-factor authentication and disallow tokens" under the package's publishing access.
+
+If a CI job fails on a flake, re-run the failed jobs with `gh run rerun <id> --failed`. If `publish` fails on OIDC, fix the trusted publisher and re-run it the same way. If the tagged tree itself must change, publish a new patch version. If npm published but `release` failed, re-run that job. If it has to be done by hand, attach the tarball npm serves (`npm pack dsh-google-chrome-use@<version>`), and use `node scripts/release-notes.mjs <version> --body-file <path>` for the title and body.

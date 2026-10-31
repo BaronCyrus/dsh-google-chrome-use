@@ -1,0 +1,171 @@
+name: Publish
+
+# A tag publishes. A manual run does everything else a tag does, and asks npm
+# whether it would accept this workflow.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Check the release and pack it
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.0
+      - name: Refuse a tag that does not match package.json
+        if: github.event_name == 'push'
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json $version"
+            exit 1
+          fi
+      # Checked before npm publishes, so a version never reaches npm without
+      # the notes its GitHub Release is created from.
+      - name: Refuse a version without its GitHub Release notes
+        run: node scripts/release-notes.mjs "$(node -p "require('./package.json').version")" > /dev/null
+      # Nothing is installed: the package has no build and no lifecycle scripts,
+      # so this is byte for byte what `pnpm pack` gives on a clean checkout.
+      - name: Pack
+        run: pnpm pack --pack-destination .artifacts
+      # A manual run usually sits on a version npm already has.
+      - name: Refuse a version npm already has
+        if: github.event_name == 'push'
+        run: npm publish ".artifacts/dsh-google-chrome-use-${GITHUB_REF_NAME#v}.tgz" --access public --dry-run
+      - name: Hand the tarball to the later jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tarball
+          path: .artifacts/dsh-google-chrome-use-*.tgz
+          # upload-artifact@v4 skips anything under a dot directory unless
+          # told otherwise; the glob matches only the tarball.
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: Test
+    needs: package
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish to npm
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The only job a tag can publish from. It runs no repository or dependency
+    # code: Node, npm and the tarball.
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          # Bundles npm 11.19. Trusted publishing needs 11.5.1 or later.
+          node-version: 24.22.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-tarball
+          path: .artifacts
+      - name: Show npm and the tarball
+        run: |
+          npm --version
+          ls -l .artifacts
+      # Never add a setup-node registry-url or NODE_AUTH_TOKEN to this job:
+      # npm treats either as token auth and skips OIDC.
+      - name: Publish
+        if: github.event_name == 'push'
+        # Straight to `latest`, which the update button and DSH's Plugins page install.
+        run: npm publish ".artifacts/dsh-google-chrome-use-${GITHUB_REF_NAME#v}.tgz" --access public
+
+  release:
+    name: Create the GitHub Release
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The only job that may write to the repository. It runs no dependency
+    # code: checkout, Node's built-ins, the published tarball and the
+    # runner's gh.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-tarball
+          path: .artifacts
+      - name: Create the release with the tarball npm published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # A release made by hand is left as it is; a re-run must not fail on it.
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists; leaving it unchanged"
+            exit 0
+          fi
+          notes="$RUNNER_TEMP/release-notes.md"
+          title="$(node scripts/release-notes.mjs "$version" --body-file "$notes")"
+          # npm's `latest` names this version from now on, and so does Latest here.
+          gh release create "$GITHUB_REF_NAME" ".artifacts/dsh-google-chrome-use-$version.tgz" --verify-tag --latest --title "$title" --notes-file "$notes"
+
+  trusted-publisher:
+    name: Ask npm whether it would accept this workflow
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.0
+      - name: Show the OIDC identity npm will match
+        run: |
+          node --input-type=module <<'EOF'
+          const url = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL)
+          url.searchParams.set('audience', 'npm:registry.npmjs.org')
+          const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}` },
+          })
+          const body = await response.json()
+          if (!response.ok || !body.value) {
+            console.error('GitHub did not return an OIDC token', response.status)
+            process.exit(1)
+          }
+          const payload = JSON.parse(Buffer.from(body.value.split('.')[1], 'base64url').toString())
+          const claims = ['repository', 'repository_owner', 'workflow', 'workflow_ref', 'job_workflow_ref', 'ref', 'environment', 'repository_visibility', 'aud', 'iss']
+          for (const key of claims) console.log(`${key}=${payload[key] ?? ''}`)
+          const exchange = await fetch('https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/dsh-google-chrome-use', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${body.value}` },
+          })
+          // Never print the exchange body: truncation can cut off a token's
+          // closing quote before a redaction regex sees it.
+          await exchange.arrayBuffer()
+          console.log(`exchange_status=${exchange.status}`)
+          if (!exchange.ok) {
+            console.error('npm rejected the trusted publisher; verify repository, workflow filename and environment before tagging')
+            process.exit(1)
+          }
+          EOF

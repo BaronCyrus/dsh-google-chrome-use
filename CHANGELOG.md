@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Releases now come from GitHub Actions with npm provenance, not from a developer's machine. A tag publishes only after every CI job passes on macOS and Windows.
+
 ## 0.2.0
 
 - Settings → Chrome Use shows the running version. Opening the page asks npm for the latest one, and a newer version installs in one click with the pnpm DSH uses. The page then asks for a restart. Nothing installs in the background.
