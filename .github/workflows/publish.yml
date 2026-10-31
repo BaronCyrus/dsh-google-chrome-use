@@ -38,8 +38,9 @@ jobs:
       # the notes its GitHub Release is created from.
       - name: Refuse a version without its GitHub Release notes
         run: node scripts/release-notes.mjs "$(node -p "require('./package.json').version")" > /dev/null
-      # Nothing is installed: the package has no build and no lifecycle scripts,
-      # so this is byte for byte what `pnpm pack` gives on a clean checkout.
+      # Nothing is installed: the package has no build and no lifecycle scripts.
+      # The tar inside matches `pnpm pack` on a clean checkout anywhere, but the
+      # gzip around it differs between systems, so compare with `gunzip -c`.
       - name: Pack
         run: pnpm pack --pack-destination .artifacts
       # A manual run usually sits on a version npm already has.
