@@ -30,7 +30,7 @@ You need [Google Chrome](https://www.google.com/chrome/) and the DeepSeek Harnes
 1. Open **Plugins** in the desktop app, click **Add plugin**, and enter this under package name or address:
 
    ```text
-   dsh-google-chrome-use@0.2.0
+   dsh-google-chrome-use@0.2.1
    ```
 
    Choose the official source and click **Install**. For 24 hours after a release, DSH's pnpm holds back new versions, so keep the version number.
@@ -43,7 +43,7 @@ You need [Google Chrome](https://www.google.com/chrome/) and the DeepSeek Harnes
 <summary>Command line and custom profiles</summary>
 
 ```bash
-dsh plugin --profile web add dsh-google-chrome-use@0.2.0
+dsh plugin --profile web add dsh-google-chrome-use@0.2.1
 ```
 
 Do not use this command on the `desktop` profile; use the Plugins page there. DSH 0.1.5's headless profile has no attachment store, so the model receives no screenshots there. Everything else works.

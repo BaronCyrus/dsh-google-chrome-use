@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
+
+The plugin's code is the same as 0.2.0.
 
 - Releases now come from GitHub Actions with npm provenance, not from a developer's machine. A tag publishes only after every CI job passes on macOS and Windows.
+- The steps for moving from a `link:` install to npm now delete the symlink that removing the plugin leaves behind. Without that, reinstalling moved the checkout's `node_modules` into the plugin's directory and the plugin failed to activate.
 
 ## 0.2.0
 

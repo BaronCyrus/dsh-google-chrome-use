@@ -30,7 +30,7 @@
 1. 打开桌面应用的**插件**页，点击**添加插件**，在**包名或地址**中填入：
 
    ```text
-   dsh-google-chrome-use@0.2.0
+   dsh-google-chrome-use@0.2.1
    ```
 
    安装源选择**官方源**，点击**安装**。新版本刚发布的 24 小时内，DSH 的 pnpm 会因为发布冷却期暂缓安装，所以请带上版本号。
@@ -43,7 +43,7 @@
 <summary>命令行和自建 profile</summary>
 
 ```bash
-dsh plugin --profile web add dsh-google-chrome-use@0.2.0
+dsh plugin --profile web add dsh-google-chrome-use@0.2.1
 ```
 
 不要对 `desktop` profile 使用这条命令，桌面版请走插件页。DSH 0.1.5 的 headless 模式没有附件存储，模型收不到截图，其他功能正常。

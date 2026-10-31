@@ -1,6 +1,6 @@
 {
   "name": "dsh-google-chrome-use",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "packageManager": "pnpm@10.32.1",
   "description": "Let DeepSeek Harness use Google Chrome on macOS and Windows: a dedicated profile that stays logged in, or the Chrome you already use. Powered by Chrome DevTools MCP.",
   "type": "module",
