@@ -83,7 +83,7 @@ jobs:
       - name: Show npm and the tarball
         run: |
           npm --version
-          ls -l .artifacts
+          sha1sum .artifacts/*
       # Never add a setup-node registry-url or NODE_AUTH_TOKEN to this job:
       # npm treats either as token auth and skips OIDC.
       - name: Publish
